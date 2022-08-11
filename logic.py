@@ -4,7 +4,7 @@ import qtmodules
 from BSS import data_logger
 import BSS
 from BSS_lab_equipment import flocat, Sorensen, USB_TEMP_AI
-from PySide6.QtWidgets import QApplication, QWidget, QMainWindow
+#from PySide6.QtWidgets import QApplication, QWidget, QMainWindow
 
 
 # Empty Arrays to hold data for plotting
@@ -33,7 +33,7 @@ def setup():
     global column_names
     try:
         # Alicat
-        cat = flocat.Flocat(port="/dev/ttyUSB1", event_log_name="/dev/null", baudrate=115200)
+        cat = flocat.Flocat(port="/dev/ttyUSB1", event_log_name="/dev/null", baudrate=115200,logging_level = "info")
         # Power Source
         psu = Sorensen.Sorensen(port="/dev/ttyUSB2")
         # Thermocouples
@@ -107,7 +107,7 @@ def collect_data():
     voltage_array.append(voltage_read)
     current_array.append(current_read)
     power_array.append(power_read)
-
+    
     
     print(f'tc1: {tc1:<10.3f}  tc2: {tc2:<10.3f}  tc3: {tc3:<10.3f}   tc4: {tc4:<10.3f}')
 

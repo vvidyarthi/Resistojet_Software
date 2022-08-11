@@ -15,19 +15,21 @@ from PySide6.QtWidgets import (
         QSpacerItem,
         QHBoxLayout,
         QLineEdit)
+import time
 import matplotlib
-from matplotlib.backends.backend_qt import FigureCanvasQT
+import numpy as np
+matplotlib.use('Qt5Agg')
+
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-class MplCanvas(FigureCanvasQT):
-    '''
-    Class manages the creation of empty matplotlib plots
-    '''
-
-    def __init__(self, width = 900, height = 400, dpi=100):
+class MplCanvas(FigureCanvas):
+    def __init__(self, parent=None, width=5, height=4, dpi = 100):
         fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
+        self.axes = fig.add_subplot()
         super(MplCanvas, self).__init__(fig)
+
+
 
 class Widget(QWidget):
     '''
@@ -102,16 +104,20 @@ class Widget(QWidget):
 
         # Matplots
 
-        self.thermocouple_plot = MplCanvas(width = 900, height = 400, dpi = 100)
-        self.massflow_plot = MplCanvas(width = 900, height = 400, dpi = 100)
-        self.electric_plot = MplCanvas(width = 900, height = 400, dpi = 100)
+        self.thermal_canvas = MplCanvas(self, width=5, height=4, dpi=100)
+        self.flow_canvas = MplCanvas(self, width=5, height=4, dpi=100)
+        self.electric_canvas = MplCanvas(self, width=5, height=4, dpi=100)
+
+
         self.tableside = QVBoxLayout()
         self.tableside.addWidget(QLabel("Thermocouples"))
-        self.tableside.addWidget(thermocouple_plot)
+        self.tableside.addWidget(self.thermal_canvas)
         self.tableside.addWidget(QLabel("Mass Flow"))
-        self.tableside.addWidget(massflow_plot)
+        self.tableside.addWidget(self.flow_canvas)
         self.tableside.addWidget(QLabel("Power and Voltages"))
-        self.tableside.addWidget(electric_plot)
+        self.tableside.addWidget(self.electric_canvas)
+
+
 
 
 
@@ -161,7 +167,9 @@ class Widget(QWidget):
         self.box.stateChanged.connect(lambda state:
             self.ambient_temp.setEnabled(self.box.checkState()!=Qt.Unchecked))
 
-    @Slot()
+        
+
+    #@Slot()
     def exstart(self):
         filename = self.filename.text()
         voltage = float(self.voltage_input.text())
@@ -188,7 +196,7 @@ class Widget(QWidget):
 
 
 
-    @Slot()
+    #@Slot()
     def exend(self):
         print('Clicked End')
         self.filename.setReadOnly(False)
@@ -197,8 +205,16 @@ class Widget(QWidget):
         self.target_temp.setReadOnly(False)
 
 
-class MainWindow(QMainWindow):
-    def __init__(self, widget):
-        QMainWindow.__init__(self)
-        self.setWindowTitle("Benchmark Space Systems Resistojet Software")
-        self.setCentralWidget(widget)
+
+
+
+#class MainWindow(QMainWindow):
+#    def __init__(self, widget):
+#        QMainWindow.__init__(self)
+#        self.setWindowTitle("Benchmark Space Systems Resistojet Software")
+#        self.setCentralWidget(widget)
+#        self.update_canvas()
+
+
+
+
