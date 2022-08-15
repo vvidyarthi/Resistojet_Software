@@ -3,32 +3,33 @@ Handles all of the Qt modules and graph displays
 '''
 from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import (
-        QApplication,
-        QMainWindow,
-        QVBoxLayout,
-        QGridLayout,
-        QWidget,
-        QSizePolicy,
-        QCheckBox,
-        QLabel,
-        QPushButton,
-        QSpacerItem,
-        QHBoxLayout,
-        QLineEdit)
+    QApplication,
+    QMainWindow,
+    QVBoxLayout,
+    QGridLayout,
+    QWidget,
+    QSizePolicy,
+    QCheckBox,
+    QLabel,
+    QPushButton,
+    QSpacerItem,
+    QHBoxLayout,
+    QLineEdit)
 import time
 import matplotlib
 import numpy as np
+
 matplotlib.use('Qt5Agg')
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
+
 class MplCanvas(FigureCanvas):
-    def __init__(self, parent=None, width=5, height=4, dpi = 100):
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot()
         super(MplCanvas, self).__init__(fig)
-
 
 
 class Widget(QWidget):
@@ -68,47 +69,47 @@ class Widget(QWidget):
         self.userside.addWidget(self.preheat_time)
         self.userside.addWidget(QLabel("Target Temp [C]"))
         self.userside.addWidget(self.target_temp)
-        
+
         self.cycling = QGridLayout()
-        self.spaceItem = QSpacerItem(150,10, QSizePolicy.Expanding)
+        self.spaceItem = QSpacerItem(150, 10, QSizePolicy.Expanding)
         self.cycling.addWidget(self.box)
-        self.cycling.addItem(self.spaceItem, 1,1, 1,1)
+        self.cycling.addItem(self.spaceItem, 1, 1, 1, 1)
 
         self.cycling.addWidget(QLabel('Number of Cycles:'))
-        self.cycling.addItem(self.spaceItem, 1,3, 1,1)
+        # self.cycling.addItem(self.spaceItem, 1,3, 1,1)
         self.cycling.addWidget(self.cycles)
 
         self.cycling.addWidget(QLabel('Input Voltage:'))
-        self.cycling.addItem(self.spaceItem, 1,3, 1,1)
+        # self.cycling.addItem(self.spaceItem, 1,3, 1,1)
         self.cycling.addWidget(self.cycle_voltage)
-
+        #
         self.cycling.addWidget(QLabel('Time at Target Temp:'))
-        self.cycling.addItem(self.spaceItem, 1,3, 1,1)
+        # self.cycling.addItem(self.spaceItem, 1, 3, 1, 1)
         self.cycling.addWidget(self.cycle_on_time)
-
+        #
         self.cycling.addWidget(QLabel('Time at Low Temp:'))
-        self.cycling.addItem(self.spaceItem, 1,3, 1,1)
+        # self.cycling.addItem(self.spaceItem, 1,3, 1,1)
         self.cycling.addWidget(self.cycle_off_time)
-
+        #
         self.cycling.addWidget(QLabel('Target Temp:'))
-        self.cycling.addItem(self.spaceItem, 1,2, 1,1)
+        # self.cycling.addItem(self.spaceItem, 1,2, 1,1)
         self.cycling.addWidget(self.cycle_target_temp)
-        
+        #
         self.cycling.addWidget(QLabel('Off Temp:'))
-        self.cycling.addItem(self.spaceItem, 1,2, 1,1)
+        # self.cycling.addItem(self.spaceItem, 1,2, 1,1)
         self.cycling.addWidget(self.ambient_temp)
-
+        #
         self.buttons = QVBoxLayout()
         self.buttons.addWidget(self.start)
         self.buttons.addWidget(self.end)
-
-        # Matplots
-
+        #
+        # # Matplots
+        #
         self.thermal_canvas = MplCanvas(self, width=5, height=4, dpi=100)
         self.flow_canvas = MplCanvas(self, width=5, height=4, dpi=100)
         self.electric_canvas = MplCanvas(self, width=5, height=4, dpi=100)
-
-
+        #
+        #
         self.tableside = QVBoxLayout()
         self.tableside.addWidget(QLabel("Thermocouples"))
         self.tableside.addWidget(self.thermal_canvas)
@@ -116,60 +117,58 @@ class Widget(QWidget):
         self.tableside.addWidget(self.flow_canvas)
         self.tableside.addWidget(QLabel("Power and Voltages"))
         self.tableside.addWidget(self.electric_canvas)
-
-
-
-
-
+        #
+        #
+        #
+        #
+        #
         self.layout = QVBoxLayout()
         self.layout.addLayout(self.userside)
         self.layout.addLayout(self.cycling)
         self.layout.addLayout(self.buttons)
         self.layout.addLayout(self.tableside)
-
-
+        #
+        #
         self.setLayout(self.layout)
-
+        #
         self.start.clicked.connect(self.exstart)
         self.end.clicked.connect(self.exend)
+        #
+        #
+        # # Disabling inputs depending on the checkbox
+        #
+        self.filename.setEnabled(self.box.checkState() == Qt.Unchecked)
+        self.voltage_input.setEnabled(self.box.checkState() == Qt.Unchecked)
+        self.preheat_time.setEnabled(self.box.checkState() == Qt.Unchecked)
+        self.target_temp.setEnabled(self.box.checkState() == Qt.Unchecked)
+        #
+        self.cycles.setEnabled(self.box.checkState() != Qt.Unchecked)
+        self.cycle_voltage.setEnabled(self.box.checkState() != Qt.Unchecked)
+        self.cycle_on_time.setEnabled(self.box.checkState() != Qt.Unchecked)
+        self.cycle_off_time.setEnabled(self.box.checkState() != Qt.Unchecked)
+        self.cycle_target_temp.setEnabled(self.box.checkState() != Qt.Unchecked)
+        self.ambient_temp.setEnabled(self.box.checkState() != Qt.Unchecked)
+        #
+        self.box.stateChanged.connect(lambda state:
+                                      self.voltage_input.setEnabled(self.box.checkState() == Qt.Unchecked))
+        self.box.stateChanged.connect(lambda state:
+                                      self.preheat_time.setEnabled(self.box.checkState() == Qt.Unchecked))
+        self.box.stateChanged.connect(lambda state:
+                                      self.target_temp.setEnabled(self.box.checkState() == Qt.Unchecked))
+        self.box.stateChanged.connect(lambda state:
+                                      self.cycles.setEnabled(self.box.checkState() != Qt.Unchecked))
+        self.box.stateChanged.connect(lambda state:
+                                      self.cycle_voltage.setEnabled(self.box.checkState() != Qt.Unchecked))
+        self.box.stateChanged.connect(lambda state:
+                                      self.cycle_on_time.setEnabled(self.box.checkState() != Qt.Unchecked))
+        self.box.stateChanged.connect(lambda state:
+                                      self.cycle_off_time.setEnabled(self.box.checkState() != Qt.Unchecked))
+        self.box.stateChanged.connect(lambda state:
+                                      self.cycle_target_temp.setEnabled(self.box.checkState() != Qt.Unchecked))
+        self.box.stateChanged.connect(lambda state:
+                                      self.ambient_temp.setEnabled(self.box.checkState() != Qt.Unchecked))
 
-
-        # Disabling inputs depending on the checkbox
-
-        self.filename.setEnabled(self.box.checkState()==Qt.Unchecked)
-        self.voltage_input.setEnabled(self.box.checkState()==Qt.Unchecked)
-        self.preheat_time.setEnabled(self.box.checkState()==Qt.Unchecked)
-        self.target_temp.setEnabled(self.box.checkState()==Qt.Unchecked)
-
-        self.cycles.setEnabled(self.box.checkState()!=Qt.Unchecked)
-        self.cycle_voltage.setEnabled(self.box.checkState()!=Qt.Unchecked)
-        self.cycle_on_time.setEnabled(self.box.checkState()!=Qt.Unchecked)
-        self.cycle_off_time.setEnabled(self.box.checkState()!=Qt.Unchecked)
-        self.cycle_target_temp.setEnabled(self.box.checkState()!=Qt.Unchecked)
-        self.ambient_temp.setEnabled(self.box.checkState()!=Qt.Unchecked)
-            
-        self.box.stateChanged.connect(lambda state:
-            self.voltage_input.setEnabled(self.box.checkState()==Qt.Unchecked))
-        self.box.stateChanged.connect(lambda state:
-            self.preheat_time.setEnabled(self.box.checkState()==Qt.Unchecked))
-        self.box.stateChanged.connect(lambda state:
-            self.target_temp.setEnabled(self.box.checkState()==Qt.Unchecked))
-        self.box.stateChanged.connect(lambda state:
-            self.cycles.setEnabled(self.box.checkState()!=Qt.Unchecked))
-        self.box.stateChanged.connect(lambda state:
-            self.cycle_voltage.setEnabled(self.box.checkState()!=Qt.Unchecked))
-        self.box.stateChanged.connect(lambda state:
-            self.cycle_on_time.setEnabled(self.box.checkState()!=Qt.Unchecked))
-        self.box.stateChanged.connect(lambda state:
-            self.cycle_off_time.setEnabled(self.box.checkState()!=Qt.Unchecked))
-        self.box.stateChanged.connect(lambda state:
-            self.cycle_target_temp.setEnabled(self.box.checkState()!=Qt.Unchecked))
-        self.box.stateChanged.connect(lambda state:
-            self.ambient_temp.setEnabled(self.box.checkState()!=Qt.Unchecked))
-
-        
-
-    #@Slot()
+    # @Slot()
     def exstart(self):
         filename = self.filename.text()
         voltage = float(self.voltage_input.text())
@@ -187,16 +186,12 @@ class Widget(QWidget):
         self.cycle_target_temp.setReadOnly(True)
         self.ambient_temp.setReadOnly(True)
 
-        print('Start: %s' %filename)
-        print('Voltage: %f' %voltage)
-        print('Preheat Time: %f' %preheat)
-        print('Target Temp: %f' %target_temp)
+        print('Start: %s' % filename)
+        print('Voltage: %f' % voltage)
+        print('Preheat Time: %f' % preheat)
+        print('Target Temp: %f' % target_temp)
 
-
-
-
-
-    #@Slot()
+    # @Slot()
     def exend(self):
         print('Clicked End')
         self.filename.setReadOnly(False)
@@ -204,17 +199,9 @@ class Widget(QWidget):
         self.preheat_time.setReadOnly(False)
         self.target_temp.setReadOnly(False)
 
-
-
-
-
-#class MainWindow(QMainWindow):
+# class MainWindow(QMainWindow):
 #    def __init__(self, widget):
 #        QMainWindow.__init__(self)
 #        self.setWindowTitle("Benchmark Space Systems Resistojet Software")
 #        self.setCentralWidget(widget)
 #        self.update_canvas()
-
-
-
-

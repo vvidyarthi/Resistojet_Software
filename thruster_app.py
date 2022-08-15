@@ -45,7 +45,7 @@ class MainWindow(QMainWindow):
     def __init__(self, widget):
         QMainWindow.__init__(self)
 
-        self.collection_task(widget)
+        #self.collection_task(widget)
         self.setWindowTitle("Benchmark Space Systems Resistojet Software")
         self.setCentralWidget(widget)
 
@@ -75,7 +75,7 @@ class MainWindow(QMainWindow):
 
 if __name__ == "__main__":
 
-    setup()
+    #setup()
     app = QApplication(sys.argv)
     widget = Widget()
     

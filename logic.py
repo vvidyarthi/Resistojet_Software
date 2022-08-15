@@ -4,7 +4,7 @@ import qtmodules
 from BSS import data_logger
 import BSS
 from BSS_lab_equipment import flocat, Sorensen, USB_TEMP_AI
-#from PySide6.QtWidgets import QApplication, QWidget, QMainWindow
+#from PyQt6.QtCore import QApplication, QWidget, QMainWindow
 
 
 # Empty Arrays to hold data for plotting
@@ -59,6 +59,8 @@ def collect_data():
     '''
 
     global data_array
+
+
     current_time = time.time()
     current_read = psu.get_current()
     voltage_read = psu.get_voltage()
@@ -111,21 +113,61 @@ def collect_data():
     
     print(f'tc1: {tc1:<10.3f}  tc2: {tc2:<10.3f}  tc3: {tc3:<10.3f}   tc4: {tc4:<10.3f}')
 
+        
 
-def control_loop(target_temperature, voltage, end_state):
+
+def control_loop(target_temperature, voltage):
     '''
     Controls the PSU and modulates the temperature at a target temp
     '''
     psu.set_voltage(voltage)
-    while end_state == False:
-        logger.log_data(data_array)
-        if tc1 < (target_temperature + 5):
-            psu.set_power_on()
-        elif tc1 > (target_temperature-5):
-            psu.set_power_off()
 
-    while end_state == True:
+    if tc1 < (target_temperature + 5):
+        psu.set_power_on()
+    elif tc1 > (target_temperature-5):
         psu.set_power_off()
+def lifetime_loop(num_cycles, voltage, target_time, target_temp, low_temp, low_time):
+    iterator = 0 
+    fire_state = 1
+    idle_state = 0
+    psu.set_voltage(voltage)
+
+    while iterator < num_cycles:
+        while fire_state == 1 and idle_state == 0:
+            # Making sure that the system is in the start state
+            while tc1 < (target_temp - 5):
+                # Heating up to operation temperature
+                psu.set_power_on()
+
+            # Start time to calculate run time at target temp
+            start_time = time.time()
+            while target_time >= (time.time()-start_time):
+                if tc1 < (target_temp - 5):
+                    psu.set_power_on()
+                elif tc1 > target_temp:
+                    psu.set_power_off()
+
+            #Setting Fire state to off to signal the completion of time at 
+            #target temp
+            fire_state = 0
+            idle_state = 1
+        while fire_state == 0 and idle_state == 1:
+            while tc1 > low_temp + 5:
+                psu.set_power_off()
+            
+            start_time = time.time()
+            while low_time >= (time.time()-start_time):
+                if tc < (low_temp - 10):
+                    psu.set_power_on()
+                elif tc > (low_temp + 10):
+                    psu.set_power_off()
+                fire_state = 1
+                idle_state = 0
+                
+
+
+
+
 
 
 
