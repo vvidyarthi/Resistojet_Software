@@ -2,6 +2,7 @@
 Handles all of the Qt modules and graph displays
 '''
 from PySide6.QtCore import Qt, Slot
+from logic import control_loop, lifetime_loop, shutdown 
 from PySide6.QtWidgets import (
         QApplication,
         QMainWindow,
@@ -22,13 +23,18 @@ matplotlib.use('Qt5Agg')
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+import logic
+from BSS import  data_logger
+
+
+state = logic.StateContainer()
+
 
 class MplCanvas(FigureCanvas):
-    def __init__(self, parent=None, width=5, height=4, dpi = 100):
+    def __init__(self, parent=None, width=8, height=7, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot()
         super(MplCanvas, self).__init__(fig)
-
 
 
 class Widget(QWidget):
@@ -37,7 +43,9 @@ class Widget(QWidget):
     '''
 
     def __init__(self):
+        self.logger = None
         QWidget.__init__(self)
+
 
         # Inputs
         self.filename = QLineEdit()
@@ -72,31 +80,24 @@ class Widget(QWidget):
         self.cycling = QGridLayout()
         self.spaceItem = QSpacerItem(150,10, QSizePolicy.Expanding)
         self.cycling.addWidget(self.box)
-        self.cycling.addItem(self.spaceItem, 1,1, 1,1)
 
         self.cycling.addWidget(QLabel('Number of Cycles:'))
-        self.cycling.addItem(self.spaceItem, 1,3, 1,1)
-        self.cycling.addWidget(self.cycles)
+        self.cycling.addWidget(self.cycles,1,2)
 
         self.cycling.addWidget(QLabel('Input Voltage:'))
-        self.cycling.addItem(self.spaceItem, 1,3, 1,1)
-        self.cycling.addWidget(self.cycle_voltage)
+        self.cycling.addWidget(self.cycle_voltage,2,2)
 
         self.cycling.addWidget(QLabel('Time at Target Temp:'))
-        self.cycling.addItem(self.spaceItem, 1,3, 1,1)
-        self.cycling.addWidget(self.cycle_on_time)
+        self.cycling.addWidget(self.cycle_on_time,3,2)
 
         self.cycling.addWidget(QLabel('Time at Low Temp:'))
-        self.cycling.addItem(self.spaceItem, 1,3, 1,1)
-        self.cycling.addWidget(self.cycle_off_time)
+        self.cycling.addWidget(self.cycle_off_time,4,2)
 
         self.cycling.addWidget(QLabel('Target Temp:'))
-        self.cycling.addItem(self.spaceItem, 1,2, 1,1)
-        self.cycling.addWidget(self.cycle_target_temp)
+        self.cycling.addWidget(self.cycle_target_temp,5,2)
         
         self.cycling.addWidget(QLabel('Off Temp:'))
-        self.cycling.addItem(self.spaceItem, 1,2, 1,1)
-        self.cycling.addWidget(self.ambient_temp)
+        self.cycling.addWidget(self.ambient_temp,6,2)
 
         self.buttons = QVBoxLayout()
         self.buttons.addWidget(self.start)
@@ -104,9 +105,9 @@ class Widget(QWidget):
 
         # Matplots
 
-        self.thermal_canvas = MplCanvas(self, width=5, height=4, dpi=100)
-        self.flow_canvas = MplCanvas(self, width=5, height=4, dpi=100)
-        self.electric_canvas = MplCanvas(self, width=5, height=4, dpi=100)
+        self.thermal_canvas = MplCanvas(self, width=8, height=7, dpi=90)
+        self.flow_canvas = MplCanvas(self, width=8, height=7, dpi=90)
+        self.electric_canvas = MplCanvas(self, width=8, height=7, dpi=90)
 
 
         self.tableside = QVBoxLayout()
@@ -169,12 +170,23 @@ class Widget(QWidget):
 
         
 
-    #@Slot()
+    @Slot()
     def exstart(self):
+        self.start.setEnabled(False)
         filename = self.filename.text()
-        voltage = float(self.voltage_input.text())
-        preheat = float(self.preheat_time.text())
-        target_temp = float(self.target_temp.text())
+        filename = filename+'.csv'
+
+
+        column_names=["Time [s]",
+                "TC1 [C]",
+                "TC2 [C]",
+                "TC3 [C]",
+                "TC4 [C]",
+                "Flow rate [SLPM]",
+                "Heater Status",
+                "Voltage [V]",
+                "Current [A]",
+                "Power [W]"]
 
         self.filename.setReadOnly(True)
         self.voltage_input.setReadOnly(True)
@@ -186,35 +198,38 @@ class Widget(QWidget):
         self.cycle_off_time.setReadOnly(True)
         self.cycle_target_temp.setReadOnly(True)
         self.ambient_temp.setReadOnly(True)
+        
+        if self.box.checkState() == Qt.Unchecked:
 
-        print('Start: %s' %filename)
-        print('Voltage: %f' %voltage)
-        print('Preheat Time: %f' %preheat)
-        print('Target Temp: %f' %target_temp)
+            voltage = float(self.voltage_input.text())
+            preheat = float(self.preheat_time.text())
+            target_temp = float(self.target_temp.text())
+            self.logger = data_logger.DataLogger(filename, column_names)
+            state.control_starter(target_temp, voltage)
+        elif self.box.checkState() != Qt.Unchecked:
 
+            cycle_voltage = float(self.cycle_voltage.text())
+            cycle_on_time = float(self.cycle_on_time.text())
+            cycle_off_time = float(self.cycle_off_time.text())
+            cycle_target_temp = float(self.cycle_target_temp.text())
+            cycle_ambient_temp = float(self.ambient_temp.text())
+            num_cycles = int(self.cycles.text())
 
-
-
-
-    #@Slot()
+    @Slot()
     def exend(self):
         print('Clicked End')
+        shutdown()
+        state.control_stop()
+
+        try:
+            self.logger.save()
+            self.logger.close()
+        except (Exception,):
+            pass
         self.filename.setReadOnly(False)
         self.voltage_input.setReadOnly(False)
         self.preheat_time.setReadOnly(False)
         self.target_temp.setReadOnly(False)
 
-
-
-
-
-#class MainWindow(QMainWindow):
-#    def __init__(self, widget):
-#        QMainWindow.__init__(self)
-#        self.setWindowTitle("Benchmark Space Systems Resistojet Software")
-#        self.setCentralWidget(widget)
-#        self.update_canvas()
-
-
-
+        self.start.setEnabled(True)
 
