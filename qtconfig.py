@@ -2,32 +2,25 @@
 Handles all of the Qt modules and graph displays
 '''
 from PySide6.QtCore import Qt, Slot
-from logic import control_loop, lifetime_loop, shutdown 
 from PySide6.QtWidgets import (
-        QApplication,
-        QMainWindow,
-        QVBoxLayout,
-        QGridLayout,
-        QWidget,
-        QSizePolicy,
-        QCheckBox,
-        QLabel,
-        QPushButton,
-        QSpacerItem,
-        QHBoxLayout,
-        QLineEdit)
-import time
+    QVBoxLayout,
+    QGridLayout,
+    QWidget,
+    QSizePolicy,
+    QCheckBox,
+    QLabel,
+    QPushButton,
+    QSpacerItem,
+    QHBoxLayout,
+    QLineEdit)
+
 import matplotlib
-import numpy as np
-matplotlib.use('Qt5Agg')
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-import logic
-from BSS import  data_logger
+from main import *
 
-
-state = logic.StateContainer()
+matplotlib.use('Qt5Agg')
 
 
 class MplCanvas(FigureCanvas):
@@ -38,14 +31,12 @@ class MplCanvas(FigureCanvas):
 
 
 class Widget(QWidget):
-    '''
-    Class sets up the various components in the window and organizes them 
-    '''
+    """
+    Class sets up the various components in the window and organizes them
+    """
 
     def __init__(self):
-        self.logger = None
         QWidget.__init__(self)
-
 
         # Inputs
         self.filename = QLineEdit()
@@ -76,28 +67,28 @@ class Widget(QWidget):
         self.userside.addWidget(self.preheat_time)
         self.userside.addWidget(QLabel("Target Temp [C]"))
         self.userside.addWidget(self.target_temp)
-        
+
         self.cycling = QGridLayout()
-        self.spaceItem = QSpacerItem(150,10, QSizePolicy.Expanding)
+        self.spaceItem = QSpacerItem(150, 10, QSizePolicy.Expanding)
         self.cycling.addWidget(self.box)
 
         self.cycling.addWidget(QLabel('Number of Cycles:'))
-        self.cycling.addWidget(self.cycles,1,2)
+        self.cycling.addWidget(self.cycles, 1, 2)
 
         self.cycling.addWidget(QLabel('Input Voltage:'))
-        self.cycling.addWidget(self.cycle_voltage,2,2)
+        self.cycling.addWidget(self.cycle_voltage, 2, 2)
 
         self.cycling.addWidget(QLabel('Time at Target Temp:'))
-        self.cycling.addWidget(self.cycle_on_time,3,2)
+        self.cycling.addWidget(self.cycle_on_time, 3, 2)
 
         self.cycling.addWidget(QLabel('Time at Low Temp:'))
-        self.cycling.addWidget(self.cycle_off_time,4,2)
+        self.cycling.addWidget(self.cycle_off_time, 4, 2)
 
         self.cycling.addWidget(QLabel('Target Temp:'))
-        self.cycling.addWidget(self.cycle_target_temp,5,2)
-        
+        self.cycling.addWidget(self.cycle_target_temp, 5, 2)
+
         self.cycling.addWidget(QLabel('Off Temp:'))
-        self.cycling.addWidget(self.ambient_temp,6,2)
+        self.cycling.addWidget(self.ambient_temp, 6, 2)
 
         self.buttons = QVBoxLayout()
         self.buttons.addWidget(self.start)
@@ -109,7 +100,6 @@ class Widget(QWidget):
         self.flow_canvas = MplCanvas(self, width=8, height=7, dpi=90)
         self.electric_canvas = MplCanvas(self, width=8, height=7, dpi=90)
 
-
         self.tableside = QVBoxLayout()
         self.tableside.addWidget(QLabel("Thermocouples"))
         self.tableside.addWidget(self.thermal_canvas)
@@ -118,75 +108,66 @@ class Widget(QWidget):
         self.tableside.addWidget(QLabel("Power and Voltages"))
         self.tableside.addWidget(self.electric_canvas)
 
-
-
-
-
         self.layout = QVBoxLayout()
         self.layout.addLayout(self.userside)
         self.layout.addLayout(self.cycling)
         self.layout.addLayout(self.buttons)
         self.layout.addLayout(self.tableside)
 
-
         self.setLayout(self.layout)
 
-        self.start.clicked.connect(self.exstart)
-        self.end.clicked.connect(self.exend)
-
+        self.start.clicked.connect(self.qtstart)
+        self.end.clicked.connect(self.qtend)
 
         # Disabling inputs depending on the checkbox
 
-        self.filename.setEnabled(self.box.checkState()==Qt.Unchecked)
-        self.voltage_input.setEnabled(self.box.checkState()==Qt.Unchecked)
-        self.preheat_time.setEnabled(self.box.checkState()==Qt.Unchecked)
-        self.target_temp.setEnabled(self.box.checkState()==Qt.Unchecked)
+        self.filename.setEnabled(self.box.checkState() == Qt.Unchecked)
+        self.voltage_input.setEnabled(self.box.checkState() == Qt.Unchecked)
+        self.preheat_time.setEnabled(self.box.checkState() == Qt.Unchecked)
+        self.target_temp.setEnabled(self.box.checkState() == Qt.Unchecked)
 
-        self.cycles.setEnabled(self.box.checkState()!=Qt.Unchecked)
-        self.cycle_voltage.setEnabled(self.box.checkState()!=Qt.Unchecked)
-        self.cycle_on_time.setEnabled(self.box.checkState()!=Qt.Unchecked)
-        self.cycle_off_time.setEnabled(self.box.checkState()!=Qt.Unchecked)
-        self.cycle_target_temp.setEnabled(self.box.checkState()!=Qt.Unchecked)
-        self.ambient_temp.setEnabled(self.box.checkState()!=Qt.Unchecked)
-            
-        self.box.stateChanged.connect(lambda state:
-            self.voltage_input.setEnabled(self.box.checkState()==Qt.Unchecked))
-        self.box.stateChanged.connect(lambda state:
-            self.preheat_time.setEnabled(self.box.checkState()==Qt.Unchecked))
-        self.box.stateChanged.connect(lambda state:
-            self.target_temp.setEnabled(self.box.checkState()==Qt.Unchecked))
-        self.box.stateChanged.connect(lambda state:
-            self.cycles.setEnabled(self.box.checkState()!=Qt.Unchecked))
-        self.box.stateChanged.connect(lambda state:
-            self.cycle_voltage.setEnabled(self.box.checkState()!=Qt.Unchecked))
-        self.box.stateChanged.connect(lambda state:
-            self.cycle_on_time.setEnabled(self.box.checkState()!=Qt.Unchecked))
-        self.box.stateChanged.connect(lambda state:
-            self.cycle_off_time.setEnabled(self.box.checkState()!=Qt.Unchecked))
-        self.box.stateChanged.connect(lambda state:
-            self.cycle_target_temp.setEnabled(self.box.checkState()!=Qt.Unchecked))
-        self.box.stateChanged.connect(lambda state:
-            self.ambient_temp.setEnabled(self.box.checkState()!=Qt.Unchecked))
+        self.cycles.setEnabled(self.box.checkState() != Qt.Unchecked)
+        self.cycle_voltage.setEnabled(self.box.checkState() != Qt.Unchecked)
+        self.cycle_on_time.setEnabled(self.box.checkState() != Qt.Unchecked)
+        self.cycle_off_time.setEnabled(self.box.checkState() != Qt.Unchecked)
+        self.cycle_target_temp.setEnabled(self.box.checkState() != Qt.Unchecked)
+        self.ambient_temp.setEnabled(self.box.checkState() != Qt.Unchecked)
 
-        
+        self.box.stateChanged.connect(lambda state:
+                                      self.voltage_input.setEnabled(self.box.checkState() == Qt.Unchecked))
+        self.box.stateChanged.connect(lambda state:
+                                      self.preheat_time.setEnabled(self.box.checkState() == Qt.Unchecked))
+        self.box.stateChanged.connect(lambda state:
+                                      self.target_temp.setEnabled(self.box.checkState() == Qt.Unchecked))
+        self.box.stateChanged.connect(lambda state:
+                                      self.cycles.setEnabled(self.box.checkState() != Qt.Unchecked))
+        self.box.stateChanged.connect(lambda state:
+                                      self.cycle_voltage.setEnabled(self.box.checkState() != Qt.Unchecked))
+        self.box.stateChanged.connect(lambda state:
+                                      self.cycle_on_time.setEnabled(self.box.checkState() != Qt.Unchecked))
+        self.box.stateChanged.connect(lambda state:
+                                      self.cycle_off_time.setEnabled(self.box.checkState() != Qt.Unchecked))
+        self.box.stateChanged.connect(lambda state:
+                                      self.cycle_target_temp.setEnabled(self.box.checkState() != Qt.Unchecked))
+        self.box.stateChanged.connect(lambda state:
+                                      self.ambient_temp.setEnabled(self.box.checkState() != Qt.Unchecked))
 
     @Slot()
-    def exstart(self):
+    def qtstart(self):
         self.start.setEnabled(False)
         filename = self.filename.text()
-        filename = filename+'.csv'
+        filename = filename + '.csv'
 
-
-        column_names=["Time [s]",
-                "TC1 [C]",
-                "TC2 [C]",
-                "TC3 [C]",
-                "TC4 [C]",
-                "Flow rate [SLPM]",
-                "Heater Status",
-                "Voltage [V]",
-                "Current [A]",
-                "Power [W]"]
+        column_names = ["Time [s]",
+                        "TC1 [C]",
+                        "TC2 [C]",
+                        "TC3 [C]",
+                        "TC4 [C]",
+                        "Flow rate [SLPM]",
+                        "Heater Status",
+                        "Voltage [V]",
+                        "Current [A]",
+                        "Power [W]"]
 
         self.filename.setReadOnly(True)
         self.voltage_input.setReadOnly(True)
@@ -198,14 +179,13 @@ class Widget(QWidget):
         self.cycle_off_time.setReadOnly(True)
         self.cycle_target_temp.setReadOnly(True)
         self.ambient_temp.setReadOnly(True)
-        
+
         if self.box.checkState() == Qt.Unchecked:
 
             voltage = float(self.voltage_input.text())
             preheat = float(self.preheat_time.text())
             target_temp = float(self.target_temp.text())
-            self.logger = data_logger.DataLogger(filename, column_names)
-            state.control_starter(target_temp, voltage)
+            state_.control_start(target_temp, voltage)
         elif self.box.checkState() != Qt.Unchecked:
 
             cycle_voltage = float(self.cycle_voltage.text())
@@ -216,20 +196,13 @@ class Widget(QWidget):
             num_cycles = int(self.cycles.text())
 
     @Slot()
-    def exend(self):
+    def qtend(self):
         print('Clicked End')
-        shutdown()
-        state.control_stop()
-
-        try:
-            self.logger.save()
-            self.logger.close()
-        except (Exception,):
-            pass
         self.filename.setReadOnly(False)
         self.voltage_input.setReadOnly(False)
         self.preheat_time.setReadOnly(False)
         self.target_temp.setReadOnly(False)
+        state_.control_stop()
 
         self.start.setEnabled(True)
 
