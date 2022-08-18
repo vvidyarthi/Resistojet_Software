@@ -127,7 +127,7 @@ class Plotter:
         self.voltage_array_ = voltage_array
         self.power_array_ = power_array
 
-        self.widget_.thermal_canvas.cla()
+        self.widget_.thermal_canvas.axes.cla()
         self.widget_.flow_canvas.axes.cla()
         self.widget_.electric_canvas.axes.cla()
 
@@ -170,8 +170,8 @@ class ControlContainer:
             self.psu_.set_power_off()
             self.power_flag = 0
 
-    def control_stop(self):
+    def control_shutdown(self):
         self.psu_.set_power_off()
+        self.psu_.set_voltage(0)
         self.power_flag = 0
         self.voltage_lock = 0
-

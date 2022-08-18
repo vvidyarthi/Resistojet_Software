@@ -1,6 +1,7 @@
 '''
 Handles all of the Qt modules and graph displays
 '''
+import imp
 from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import (
     QVBoxLayout,
@@ -17,6 +18,7 @@ from PySide6.QtWidgets import (
 import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+from BSS import data_logger
 
 matplotlib.use('Qt5Agg')
 
@@ -33,10 +35,12 @@ class Widget(QWidget):
     Class sets up the various components in the window and organizes them
     """
 
-    def __init__(self, state_container):
+    def __init__(self, state_container, control_container):
         QWidget.__init__(self)
 
         self.state_ = state_container
+        self.controller_ = control_container
+        self.logger = None
 
         # Inputs
         self.filename = QLineEdit()
@@ -185,6 +189,7 @@ class Widget(QWidget):
             voltage = float(self.voltage_input.text())
             preheat = float(self.preheat_time.text())
             target_temp = float(self.target_temp.text())
+            self.logger = data_logger.DataLogger(filename, column_names)
             self.state_.control_start(target_temp, voltage)
         elif self.box.checkState() != Qt.Unchecked:
 
@@ -203,6 +208,11 @@ class Widget(QWidget):
         self.preheat_time.setReadOnly(False)
         self.target_temp.setReadOnly(False)
         self.state_.control_stop()
-
+        self.controller_.shutdown()
+        try:
+            self.logger.save()
+            self.logger.close()
+        except (Exception,):
+            pass
         self.start.setEnabled(True)
 

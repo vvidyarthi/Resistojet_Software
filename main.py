@@ -18,7 +18,7 @@ class Worker(QThread):
             collector_.collect_data()
             if state_.control_state == 1 and state_.lifetime_state == 0:
                 controller_.control_loop(state_.target_temp, state_.target_temp, collector_.tc1_array)
-
+                widget_.logger.log_data(collector_.data_array)
             elif state_.control_state == 0 and state_.lifetime_state == 1:
                 print("No Lifetime State Currently Implemented")
             
@@ -45,10 +45,11 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     
     state_ = containers.StateContainer()
-    widget_ = qtconfig.Widget(state_)
+    
     collector_ = containers.DataContainer()
     collector_.setup()
     controller_ = containers.ControlContainer(collector_.psu)
+    widget_ = qtconfig.Widget(state_, controller_)
     plotter_ = containers.Plotter(widget_)
     
     window = MainWindow(widget_)
