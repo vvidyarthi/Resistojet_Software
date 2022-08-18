@@ -15,10 +15,8 @@ from PySide6.QtWidgets import (
     QLineEdit)
 
 import matplotlib
-
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from main import *
 
 matplotlib.use('Qt5Agg')
 
@@ -35,8 +33,10 @@ class Widget(QWidget):
     Class sets up the various components in the window and organizes them
     """
 
-    def __init__(self):
+    def __init__(self, state_container):
         QWidget.__init__(self)
+
+        self.state_ = state_container
 
         # Inputs
         self.filename = QLineEdit()
@@ -185,7 +185,7 @@ class Widget(QWidget):
             voltage = float(self.voltage_input.text())
             preheat = float(self.preheat_time.text())
             target_temp = float(self.target_temp.text())
-            state_.control_start(target_temp, voltage)
+            self.state_.control_start(target_temp, voltage)
         elif self.box.checkState() != Qt.Unchecked:
 
             cycle_voltage = float(self.cycle_voltage.text())
@@ -202,7 +202,7 @@ class Widget(QWidget):
         self.voltage_input.setReadOnly(False)
         self.preheat_time.setReadOnly(False)
         self.target_temp.setReadOnly(False)
-        state_.control_stop()
+        self.state_.control_stop()
 
         self.start.setEnabled(True)
 
