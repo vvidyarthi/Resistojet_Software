@@ -4,22 +4,30 @@ import time
 
 class StateContainer:
     def __init__(self):
+        # Control State 0 is at idle, 1 is normal firing, and 2 is lifetime tesing
         self.control_state = 0
-        self.lifetime_state = 0
         self.target_temp = 0
         self.voltage = 0
         print("Initialized State Containers")
 
     def control_start(self, temperature_input, voltage_input):
         self.control_state = 1
-        self.lifetime_state = 0
         self.target_temp = temperature_input
         self.voltage = voltage_input
         print("Control Started")
+    
+    def control_lifetime(self, cycle_num_inp, low_temp_inp, low_time_inp, high_temp_inp, high_time_inp):
+        self.control_state = 2
+        self.cycle_number = cycle_num_inp
+        self.low_temperature = low_temp_inp
+        self.low_time = low_time_inp
+        self.high_temp = high_temp_inp
+        self.high_time = high_time_inp
+
+        print("Lifetime Started")
 
     def control_stop(self):
         self.control_state = 0
-        self.lifetime_state = 0
         print("Control Stopped")
 
 

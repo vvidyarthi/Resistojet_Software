@@ -69,7 +69,7 @@ class Widget(QWidget):
         self.userside.addWidget(self.voltage_input)
         self.userside.addWidget(QLabel("Preheat Time [s]:"))
         self.userside.addWidget(self.preheat_time)
-        self.userside.addWidget(QLabel("Target Temp [C]"))
+        self.userside.addWidget(QLabel("Target Temp [C]:"))
         self.userside.addWidget(self.target_temp)
 
         self.cycling = QGridLayout()
@@ -168,7 +168,6 @@ class Widget(QWidget):
                         "TC3 [C]",
                         "TC4 [C]",
                         "Flow rate [SLPM]",
-                        "Heater Status",
                         "Voltage [V]",
                         "Current [A]",
                         "Power [W]"]
@@ -208,7 +207,7 @@ class Widget(QWidget):
         self.preheat_time.setReadOnly(False)
         self.target_temp.setReadOnly(False)
         self.state_.control_stop()
-        self.controller_.shutdown()
+        self.controller_.control_shutdown()
         try:
             self.logger.save()
             self.logger.close()
