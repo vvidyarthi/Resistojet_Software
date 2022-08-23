@@ -14,22 +14,18 @@ class Worker(QThread):
         QThread.__init__(self)
     
     def run(self):
+        try:
+            collector_.collect_data()
 
-        collector_.collect_data()
-
+        except (Exception,):
+            pass
+        
         if state_.control_state == 1:
-            controller_.control_normal(state_.target_temp, state_.voltage, collector_.tc1_array)
+            controller_.control_normal(state_.target_temp, state_.fire_temp, state_.voltage, collector_.tc1_array, collector_.flow_array)
             widget_.logger.log_data(collector_.data_array)
-            print("Control State:")
-            print(state_.control_state)
+
             
         elif state_.control_state == 2:
-            controller_.control_always_on(state_.target_temp, state_.voltage, collector_.tc1_array, collector_.flow_array)
-            widget_.logger.log_data(collector_.data_array)
-            print("Control State:")
-            print(state_.control_state)
-            
-        elif state_.control_state == 3:
             print("No Lifetime State Currently Implemented")
             
         plotter_.plot_data(collector_.time_array, collector_.tc1_array, collector_.tc2_array,
