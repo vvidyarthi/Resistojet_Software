@@ -71,6 +71,7 @@ class Widget(QWidget):
         self.userside.addWidget(self.preheat_time)
         self.userside.addWidget(QLabel("Target Temp [C]:"))
         self.userside.addWidget(self.target_temp)
+        self.userside.addWidget(self.always_on)
 
         self.cycling = QGridLayout()
         self.spaceItem = QSpacerItem(150, 10, QSizePolicy.Expanding)
@@ -189,7 +190,15 @@ class Widget(QWidget):
             preheat = float(self.preheat_time.text())
             target_temp = float(self.target_temp.text())
             self.logger = data_logger.DataLogger(filename, column_names)
-            self.state_.control_start(target_temp, voltage)
+            self.state_.control_normal(target_temp, voltage)
+        
+        elif self.always_on.checkState() != Qt.Unchecked:
+            voltage = float(self.voltage_input.text())
+            preheat = float(self.preheat_time.text())
+            target_temp = float(self.target_temp.text())
+            self.logger = data_logger.DataLogger(filename, column_names)
+            self.state_.control_always_on(target_temp, voltage)
+
         elif self.box.checkState() != Qt.Unchecked:
 
             cycle_voltage = float(self.cycle_voltage.text())
@@ -207,7 +216,7 @@ class Widget(QWidget):
         self.preheat_time.setReadOnly(False)
         self.target_temp.setReadOnly(False)
         self.state_.control_stop()
-        self.controller_.control_shutdown()
+        # self.controller_.control_shutdown()
         try:
             self.logger.save()
             self.logger.close()

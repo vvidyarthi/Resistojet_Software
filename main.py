@@ -1,29 +1,39 @@
+from os import stat
 import sys
-
 import containers
 import qtconfig
-from qtconfig import *
-from containers import *
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow)
-from PySide6.QtCore import QThread
+from PySide6.QtCore import QThread, QTimer
 
 
 class Worker(QThread):
+
+    def __init__(self):
+        QThread.__init__(self)
+    
     def run(self):
 
-        while True:
+        collector_.collect_data()
+
+        if state_.control_state == 1:
+            controller_.control_normal(state_.target_temp, state_.voltage, collector_.tc1_array)
+            widget_.logger.log_data(collector_.data_array)
+            print("Control State:")
+            print(state_.control_state)
             
-            collector_.collect_data()
-            if state_.control_state == 1 and state_.lifetime_state == 0:
-                controller_.control_loop(state_.target_temp, state_.target_temp, collector_.tc1_array)
-                widget_.logger.log_data(collector_.data_array)
-            elif state_.control_state == 0 and state_.lifetime_state == 1:
-                print("No Lifetime State Currently Implemented")
+        elif state_.control_state == 2:
+            controller_.control_always_on(state_.target_temp, state_.voltage, collector_.tc1_array, collector_.flow_array)
+            widget_.logger.log_data(collector_.data_array)
+            print("Control State:")
+            print(state_.control_state)
             
-            plotter_.plot_data(collector_.time_array, collector_.tc1_array, collector_.tc2_array,
-                            collector_.flow_array, collector_.voltage_array, collector_.power_array)
+        elif state_.control_state == 3:
+            print("No Lifetime State Currently Implemented")
+            
+        plotter_.plot_data(collector_.time_array, collector_.tc1_array, collector_.tc2_array,
+        collector_.flow_array, collector_.voltage_array, collector_.power_array)
 
 
 class MainWindow(QMainWindow):
@@ -38,7 +48,11 @@ class MainWindow(QMainWindow):
     def background_task(self):
         self.worker = Worker()
         # self.worker.started.connect(self.worker.run)
-        self.worker.start()
+        # self.worker.start()
+        self.update_timer = QTimer()
+        self.update_timer.setInterval(int(10))
+        self.update_timer.timeout.connect(self.worker.run)
+        self.update_timer.start()
 
 
 if __name__ == "__main__":
@@ -47,13 +61,13 @@ if __name__ == "__main__":
     state_ = containers.StateContainer()
     
     collector_ = containers.DataContainer()
-    collector_.setup()
+    # collector_.setup()
     controller_ = containers.ControlContainer(collector_.psu)
     widget_ = qtconfig.Widget(state_, controller_)
     plotter_ = containers.Plotter(widget_)
     
     window = MainWindow(widget_)
-    window.resize(1080, 900)
+    window.resize(900, 1080)
 
     window.show()
     sys.exit(app.exec())

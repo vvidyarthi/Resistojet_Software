@@ -10,14 +10,19 @@ class StateContainer:
         self.voltage = 0
         print("Initialized State Containers")
 
-    def control_start(self, temperature_input, voltage_input):
+    def control_normal(self, temperature_input, voltage_input):
         self.control_state = 1
         self.target_temp = temperature_input
         self.voltage = voltage_input
-        print("Control Started")
+        print("Normal Control")
+    
+    def control_always_on(self, temperature_input, voltage_input):
+        self.control_state = 2
+        self.target_temp = temperature_input
+        self.voltage = voltage_input
     
     def control_lifetime(self, cycle_num_inp, low_temp_inp, low_time_inp, high_temp_inp, high_time_inp):
-        self.control_state = 2
+        self.control_state = 3
         self.cycle_number = cycle_num_inp
         self.low_temperature = low_temp_inp
         self.low_time = low_time_inp
@@ -154,7 +159,6 @@ class Plotter:
         self.widget_.thermal_canvas.draw()
         self.widget_.flow_canvas.draw()
         self.widget_.electric_canvas.draw()
-        time.sleep(0.2)
 
 
 class ControlContainer:
@@ -164,7 +168,7 @@ class ControlContainer:
         self.power_flag = 0
         self.voltage_lock = 0
 
-    def control_loop(self, target_temperature, voltage, tc1_array_input):
+    def control_normal(self, target_temperature, voltage, tc1_array_input):
         self.tc1_array = tc1_array_input
         if self.voltage_lock == 0:
             self.psu_.set_voltage(voltage)
@@ -177,6 +181,26 @@ class ControlContainer:
         elif self.tc1_array[-1] > (target_temperature - 5) and self.power_flag == 1:
             self.psu_.set_power_off()
             self.power_flag = 0
+    
+    def control_always_on (self, target_temperature, voltage, tc1_array_input, flow):
+        self.tc1_array = tc1_array_input
+        self.flow_array = flow
+        if self.voltage_lock == 0:
+            self.psu_.set_voltage(voltage)
+            self.voltage_lock = 1
+        
+        if self.tc1_array[-1] < target_temperature and self.power_flag == 0 and self.flow_array[-1] < 0.5:
+            self.psu_.set_power_on()
+            self.power_flag = 1
+        
+        elif self.tc1_array[-1] > target_temperature and self.power_flag == 1 and self.flow_array[-1] < 0.5:
+            self.psu_.set_power_off()
+            self.power_flag = 0
+
+        elif self.flow_array[-1] > 0.5 and self.power_flag == 0:
+            self.psu_.set_power_on()
+            self.power_flag = 1
+
 
     def control_shutdown(self):
         self.psu_.set_power_off()
