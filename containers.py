@@ -10,16 +10,12 @@ class StateContainer:
         self.voltage = 0
         print("Initialized State Containers")
 
-    def control_normal(self, temperature_input, voltage_input):
+    def control_normal(self, temperature_input, fire_temperature_input, voltage_input):
         self.control_state = 1
         self.target_temp = temperature_input
+        self.fire_temp = fire_temperature_input
         self.voltage = voltage_input
         print("Normal Control")
-    
-    def control_always_on(self, temperature_input, voltage_input):
-        self.control_state = 2
-        self.target_temp = temperature_input
-        self.voltage = voltage_input
     
     def control_lifetime(self, cycle_num_inp, low_temp_inp, low_time_inp, high_temp_inp, high_time_inp):
         self.control_state = 3
@@ -60,17 +56,17 @@ class DataContainer:
     def setup(self):
         try:
             # Alicat
-            self.cat = flocat.Flocat(port="/dev/ttyUSB1", event_log_name="/dev/null", baudrate=115200,
+            self.cat = flocat.Flocat(port="/dev/ttyUSB2", event_log_name="/dev/null", baudrate=115200,
                                      logging_level="info")
             # Power Source
-            self.psu = Sorensen.Sorensen(port="/dev/ttyUSB2")
+            self.psu = Sorensen.Sorensen(port="/dev/ttyUSB0")
             # Thermocouples
             self.tcdaq = USB_TEMP_AI.TcDaq()
         except (Exception,):
             print("Was unable to connect to one or more of the devices")
 
-    def collect_data(self):
-        current_time = time.time()
+    def collect_data(self, start_time):
+        current_time = time.time()-start_time
         current_read = self.psu.get_current()
         voltage_read = self.psu.get_voltage()
         power_read = current_read*voltage_read
@@ -168,39 +164,26 @@ class ControlContainer:
         self.power_flag = 0
         self.voltage_lock = 0
 
-    def control_normal(self, target_temperature, voltage, tc1_array_input):
+    def control_normal(self, target_temperature, fire_temperature, voltage, tc1_array_input, flow_array_input):
         self.tc1_array = tc1_array_input
+        self.flow_array = flow_array_input
+        
         if self.voltage_lock == 0:
             self.psu_.set_voltage(voltage)
             self.voltage_lock = 1
-            time.sleep(0.1)
 
-        if self.tc1_array[-1] < (target_temperature - 5) and self.power_flag == 0:
+        elif self.tc1_array[-1] < target_temperature and self.flow_array < 0.5 and self.power_flag == 0:
             self.psu_.set_power_on()
             self.power_flag = 1
-        elif self.tc1_array[-1] > (target_temperature - 5) and self.power_flag == 1:
+        elif self.tc1_array[-1] > target_temperature and self.flow_array > 0.5 and self.power_flag == 1:
             self.psu_.set_power_off()
             self.power_flag = 0
-    
-    def control_always_on (self, target_temperature, voltage, tc1_array_input, flow):
-        self.tc1_array = tc1_array_input
-        self.flow_array = flow
-        if self.voltage_lock == 0:
-            self.psu_.set_voltage(voltage)
-            self.voltage_lock = 1
-        
-        if self.tc1_array[-1] < target_temperature and self.power_flag == 0 and self.flow_array[-1] < 0.5:
+        elif self.flow_array > 0.5 and self.tc1_array[-1] < fire_temperature and self.power_flag == 0:
             self.psu_.set_power_on()
             self.power_flag = 1
-        
-        elif self.tc1_array[-1] > target_temperature and self.power_flag == 1 and self.flow_array[-1] < 0.5:
+        elif self.flow_array > 0.5 and self.tc1_array[-1] > fire_temperature and self.power_flag == 1:
             self.psu_.set_power_off()
             self.power_flag = 0
-
-        elif self.flow_array[-1] > 0.5 and self.power_flag == 0:
-            self.psu_.set_power_on()
-            self.power_flag = 1
-
 
     def control_shutdown(self):
         self.psu_.set_power_off()

@@ -132,6 +132,7 @@ class Widget(QWidget):
         self.voltage_input.setEnabled(self.box.checkState() == Qt.Unchecked)
         self.preheat_time.setEnabled(self.box.checkState() == Qt.Unchecked)
         self.target_temp.setEnabled(self.box.checkState() == Qt.Unchecked)
+        self.fire_temp.setEnabled(self.box.checkState() == Qt.Unchecked)
 
         self.cycles.setEnabled(self.box.checkState() != Qt.Unchecked)
         self.cycle_voltage.setEnabled(self.box.checkState() != Qt.Unchecked)
@@ -179,6 +180,7 @@ class Widget(QWidget):
         self.voltage_input.setReadOnly(True)
         self.preheat_time.setReadOnly(True)
         self.target_temp.setReadOnly(True)
+        self.fire_temp.setReadOnly(True)
         self.cycles.setReadOnly(True)
         self.cycle_voltage.setReadOnly(True)
         self.cycle_on_time.setReadOnly(True)
@@ -212,6 +214,7 @@ class Widget(QWidget):
         self.voltage_input.setReadOnly(False)
         self.preheat_time.setReadOnly(False)
         self.target_temp.setReadOnly(False)
+        self.fire_temp.setReadOnly(False)
         self.state_.control_stop()
         # self.controller_.control_shutdown()
         try:
