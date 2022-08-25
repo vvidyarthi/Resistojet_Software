@@ -16,20 +16,24 @@ class Worker(QThread):
         QThread.__init__(self)
     
     def run(self):
+        while True:
+            
+            collector_.collect_data(self.init_time)
+        # plotter_.plot_data(collector_.time_array, collector_.tc1_array, collector_.tc2_array, 
+        #     collector_.flow_array, collector_.voltage_array, collector_.power_array)
 
-        collector_.collect_data(self.init_time)
 
-        if state_.control_state == 1:
-            controller_.control_normal(state_.target_temp, state_.fire_temp, state_.voltage, collector_.tc1_array, collector_.flow_array)
-            widget_.logger.log_data(collector_.data_array)
+            if state_.control_state == 0:
+                pass
+
+            elif state_.control_state == 1:
+                controller_.control_normal(state_.target_temp, state_.fire_temp, state_.voltage, collector_.tc1_array, collector_.flow_array)
+                widget_.logger.log_data(collector_.data_array)
 
             
-        elif state_.control_state == 2:
-            print("No Lifetime State Currently Implemented")
+            elif state_.control_state == 2:
+                print("No Lifetime State Currently Implemented")
             
-        plotter_.plot_data(collector_.time_array, collector_.tc1_array, collector_.tc2_array, 
-            collector_.flow_array, collector_.voltage_array, collector_.power_array)
-
 
 class MainWindow(QMainWindow):
 
@@ -42,12 +46,12 @@ class MainWindow(QMainWindow):
 
     def background_task(self):
         self.worker = Worker()
-        # self.worker.started.connect(self.worker.run)
-        # self.worker.start()
-        self.update_timer = QTimer()
-        self.update_timer.setInterval(100)
-        self.update_timer.timeout.connect(self.worker.run)
-        self.update_timer.start()
+        self.worker.started.connect(self.worker.run)
+        self.worker.start()
+        # self.update_timer = QTimer()
+        # self.update_timer.setInterval(100)
+        # self.update_timer.timeout.connect(self.worker.run)
+        # self.update_timer.start()
 
 
 if __name__ == "__main__":

@@ -172,6 +172,8 @@ class Widget(QWidget):
                         "TC3 [C]",
                         "TC4 [C]",
                         "Flow rate [SLPM]",
+                        "Alicat Pressure",
+                        "Alicat TC",
                         "Voltage [V]",
                         "Current [A]",
                         "Power [W]"]
@@ -216,7 +218,7 @@ class Widget(QWidget):
         self.target_temp.setReadOnly(False)
         self.fire_temp.setReadOnly(False)
         self.state_.control_stop()
-        # self.controller_.control_shutdown()
+        self.controller_.control_shutdown()
         try:
             self.logger.save()
             self.logger.close()

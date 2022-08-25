@@ -29,7 +29,6 @@ class StateContainer:
 
     def control_stop(self):
         self.control_state = 0
-        print("Control Stopped")
 
 
 class DataContainer:
@@ -43,12 +42,16 @@ class DataContainer:
         self.tc3 = None
         self.tc4 = None
         self.flow = None
+        self.pressure = None
+        self.alicat_tc = None
         self.time_array = []
         self.tc1_array = []
         self.tc2_array = []
         self.tc3_array = []
         self.tc4_array = []
         self.flow_array = []
+        self.pressure_array = []
+        self.alicat_tc_array = [] 
         self.voltage_array = []
         self.current_array = []
         self.power_array = []
@@ -98,11 +101,14 @@ class DataContainer:
 
         # Alicat Data Acquisition
         try:
-            self.flow = self.cat.get_data()[4]
+            alicat_data_array = self.cat.get_data()
+            self.pressure = alicat_data_array[1]
+            self.alicat_tc = alicat_data_array[2]
+            self.flow = alicat_data_array[4]
         except (Exception,):
             self.flow = 1
         # Putting Data into an array and saving to the file
-        self.data_array = (current_time, self.tc1, self.tc2, self.tc3, self.tc4, self.flow, voltage_read, current_read,
+        self.data_array = (current_time, self.tc1, self.tc2, self.tc3, self.tc4, self.flow, self.pressure, self.alicat_tc, voltage_read, current_read,
                            power_read)
         # Appending into the arrays
         self.time_array.append(current_time)
@@ -111,6 +117,8 @@ class DataContainer:
         self.tc3_array.append(self.tc3)
         self.tc4_array.append(self.tc4)
         self.flow_array.append(self.flow)
+        self.pressure_array.append(self.pressure)
+        self.alicat_tc_array.append(self.alicat_tc)
         self.voltage_array.append(voltage_read)
         self.current_array.append(current_read)
         self.power_array.append(power_read)
@@ -172,21 +180,20 @@ class ControlContainer:
             self.psu_.set_voltage(voltage)
             self.voltage_lock = 1
 
-        elif self.tc1_array[-1] < target_temperature and self.flow_array < 0.5 and self.power_flag == 0:
+        elif self.tc1_array[-1] < target_temperature and self.flow_array[-1] < 0.5 and self.power_flag == 0:
             self.psu_.set_power_on()
             self.power_flag = 1
-        elif self.tc1_array[-1] > target_temperature and self.flow_array > 0.5 and self.power_flag == 1:
+        elif self.tc1_array[-1] > target_temperature and self.flow_array[-1] > 0.5 and self.power_flag == 1:
             self.psu_.set_power_off()
             self.power_flag = 0
-        elif self.flow_array > 0.5 and self.tc1_array[-1] < fire_temperature and self.power_flag == 0:
+        elif self.flow_array[-1] > 0.5 and self.tc1_array[-1] < fire_temperature and self.power_flag == 0:
             self.psu_.set_power_on()
             self.power_flag = 1
-        elif self.flow_array > 0.5 and self.tc1_array[-1] > fire_temperature and self.power_flag == 1:
+        elif self.flow_array[-1] > 0.5 and self.tc1_array[-1] > fire_temperature and self.power_flag == 1:
             self.psu_.set_power_off()
             self.power_flag = 0
 
     def control_shutdown(self):
         self.psu_.set_power_off()
-        self.psu_.set_voltage(0)
         self.power_flag = 0
         self.voltage_lock = 0
