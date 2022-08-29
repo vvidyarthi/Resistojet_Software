@@ -70,10 +70,14 @@ class DataContainer:
 
     def collect_data(self, start_time):
         current_time = time.time()-start_time
-        current_read = self.psu.get_current()
-        voltage_read = self.psu.get_voltage()
-        power_read = current_read*voltage_read
-
+        try:
+            current_read = self.psu.get_current()
+            voltage_read = self.psu.get_voltage()
+            power_read = current_read*voltage_read
+        except:
+            current_read = 0
+            voltage_read = 0
+            power_read = 0
         # Thermocouple data acquisition
 
         try:

@@ -6,17 +6,18 @@ import qtconfig
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow)
-from PySide6.QtCore import QThread, QTimer
+from PySide6.QtCore import QObject, QThread, QTimer
 
 
-class Worker(QThread):
+class Worker(QObject):
 
     def __init__(self):
         self.init_time = time.time()
-        QThread.__init__(self)
+        QObject.__init__(self)
     
     def run(self):
         while True:
+            time.sleep(0.01)
             collector_.collect_data(self.init_time)
 
             if state_.control_state == 1:
@@ -40,9 +41,11 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(widget)
 
     def background_task(self):
+        self.thread = QThread()
         self.worker = Worker()
-        self.worker.started.connect(self.worker.run)
-        self.worker.start()
+        self.worker.moveToThread(self.thread)
+        self.thread.started.connect(self.worker.run)
+        self.thread.start()
         # self.update_timer = QTimer()
         # self.update_timer.setInterval(500)
         # self.update_timer.timeout.connect(self.worker.run)
@@ -55,8 +58,9 @@ if __name__ == "__main__":
     state_ = containers.StateContainer()
     collector_ = containers.DataContainer()
     collector_.setup()
-    controller_ = containers.ControlContainer(collector_.psu)
+    controller_ = containers.ControlContainer()#collector_.psu)
     widget_ = qtconfig.Widget(state_, controller_)
+    
     plotter_ = containers.Plotter(widget_)
     
     window = MainWindow(widget_)
