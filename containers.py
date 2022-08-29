@@ -123,7 +123,7 @@ class DataContainer:
         self.current_array.append(current_read)
         self.power_array.append(power_read)
 
-        print(f'tc1: {self.tc1:<10.3f}  tc2: {self.tc2:<10.3f}  tc3: {self.tc3:<10.3f}   tc4: {self.tc4:<10.3f}')
+        #print(f'tc1: {self.tc1:<10.3f}  tc2: {self.tc2:<10.3f}  tc3: {self.tc3:<10.3f}   tc4: {self.tc4:<10.3f}')
 
 
 class Plotter:
@@ -144,9 +144,9 @@ class Plotter:
         self.voltage_array_ = voltage_array
         self.power_array_ = power_array
 
-        self.widget_.thermal_canvas.axes.cla()
-        self.widget_.flow_canvas.axes.cla()
-        self.widget_.electric_canvas.axes.cla()
+        self.widget_.thermal_canvas.axes.clear()
+        self.widget_.flow_canvas.axes.clear()
+        self.widget_.electric_canvas.axes.clear()
 
         self.widget_.thermal_canvas.axes.plot(
             self.time_array_, self.tc1_array_)
@@ -183,7 +183,7 @@ class ControlContainer:
         elif self.tc1_array[-1] < target_temperature and self.flow_array[-1] < 0.5 and self.power_flag == 0:
             self.psu_.set_power_on()
             self.power_flag = 1
-        elif self.tc1_array[-1] > target_temperature and self.flow_array[-1] > 0.5 and self.power_flag == 1:
+        elif self.tc1_array[-1] > target_temperature and self.flow_array[-1] < 0.5 and self.power_flag == 1:
             self.psu_.set_power_off()
             self.power_flag = 0
         elif self.flow_array[-1] > 0.5 and self.tc1_array[-1] < fire_temperature and self.power_flag == 0:
@@ -194,6 +194,9 @@ class ControlContainer:
             self.power_flag = 0
 
     def control_shutdown(self):
-        self.psu_.set_power_off()
-        self.power_flag = 0
-        self.voltage_lock = 0
+        if self.power_flag == 1:
+            self.power_flag = 0
+            self.voltage_lock = 0
+            self.psu_.set_power_off()
+        elif self.power_flag == 0:
+            pass

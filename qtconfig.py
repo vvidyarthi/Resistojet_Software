@@ -211,7 +211,6 @@ class Widget(QWidget):
 
     @Slot()
     def qtend(self):
-        print('Clicked End')
         self.filename.setReadOnly(False)
         self.voltage_input.setReadOnly(False)
         self.preheat_time.setReadOnly(False)
