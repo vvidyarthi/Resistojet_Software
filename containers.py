@@ -17,13 +17,14 @@ class StateContainer:
         self.voltage = voltage_input
         print("Normal Control")
     
-    def control_lifetime(self, cycle_num_inp, low_temp_inp, low_time_inp, high_temp_inp, high_time_inp):
+    def control_lifetime(self, cycle_num_inp, voltage_input, low_temp_input, low_time_input, high_temp_input, high_time_input):
         self.control_state = 3
         self.cycle_number = cycle_num_inp
-        self.low_temperature = low_temp_inp
-        self.low_time = low_time_inp
-        self.high_temp = high_temp_inp
-        self.high_time = high_time_inp
+        self.voltage = voltage_input
+        self.low_temp = low_temp_input
+        self.low_time = low_time_input
+        self.high_temp = high_temp_input
+        self.high_time = high_time_input
 
         print("Lifetime Started")
 
@@ -171,17 +172,32 @@ class Plotter:
 
 class ControlContainer:
     def __init__(self, psu):
+        # Normal Variables Init
+
         self.psu_ = psu
         self.tc1_array = []
+        self.flow_array = []
         self.power_flag = 0
         self.voltage_lock = 0
+        self.voltage = 0
 
-    def control_normal(self, target_temperature, fire_temperature, voltage, tc1_array_input, flow_array_input):
+        # Liftime Variables Init
+        self.start_time = 0 
+        self.high_temp_mode = 0
+        self.low_temp_mode = 0
+        self.cycle_number = 0
+        self.num_cycles = 0
+        self.high_temp = 0
+        self.high_time = 0
+        self.low_temp = 0
+        self.low_time = 0
+
+    def control_normal(self, target_temperature, fire_temperature, voltage_input, tc1_array_input, flow_array_input):
         self.tc1_array = tc1_array_input
         self.flow_array = flow_array_input
-        
+        self.voltage = voltage_input
         if self.voltage_lock == 0:
-            self.psu_.set_voltage(voltage)
+            self.psu_.set_voltage(self.voltage)
             self.voltage_lock = 1
 
         elif self.tc1_array[-1] < target_temperature and self.flow_array[-1] < 0.5 and self.power_flag == 0:
@@ -197,9 +213,60 @@ class ControlContainer:
             self.psu_.set_power_off()
             self.power_flag = 0
 
+    def control_lifetime(self, num_cycles_input, voltage_input, high_temp_input, low_temp_input, high_time_input, low_time_input, tc_array_input):
+        self.tc1_array = tc_array_input
+        self.num_cycles = num_cycles_input
+        self.voltage = voltage_input
+        self.high_temp = high_temp_input
+        self.low_temp = low_temp_input
+        self.high_time = high_time_input
+        self.low_time = low_time_input
+
+        if self.voltage_lock == 0:
+            self.psu_.set_voltage(self.voltage)
+            self.voltage_lock = 1
+
+        if self.cycle_number < self.num_cycles:
+        # Preheating to target temperature
+            if self.high_temp_mode == 0 and self.low_temp_mode == 0:
+                if self.tc1_array[-1] < self.high_temp and self.power_flag == 0:
+                    self.psu_.set_power_on()
+                    self.power_flag = 1
+                elif self.tc1_array[-1] > self.high_temp and self.power_flag == 1:
+                    self.psu_.set_power_off()
+                    self.power_flag = 0
+                    self.high_temp_mode = 1
+
+            if self.high_temp_mode == 1 and self.low_temp_mode == 0 and (time.time()-self.start_time) < self.high_time:
+                if self.tc1_array[-1] < self.high_temp and self.power_flag == 0:
+                    self.psu_.set_power_on()
+                    self.power_flag = 1
+                elif self.tc1_array[-1] > self.high_temp and self.power_flag == 1:
+                    self.psu_.set_power_off()
+                    self.power_flag = 0
+            elif self.high_temp_mode == 1 and self.low_temp_mode == 0 and (time.time()-self.start_time) >= self.high_time:
+                self.high_temp_mode = 0
+                self.low_temp_mode = 1
+                self.start_time = time.time()
+            
+            if self.high_temp_mode == 0 and self.low_temp_mode == 1 and (time.time()-self.start_time) < self.low_time:
+                if self.tc1_array[-1] < self.low_temp and self.power_flag == 0:
+                    self.psu_.set_power_on()
+                    self.power_flag = 1
+                elif self.tc1_array[-1] > self.low_temp and self.power_flag == 1:
+                    self.psu_.set_power_off()
+                    self.power_flag = 0
+            elif self.high_temp_mode == 0 and self.low_temp_mode == 1 and (time.time()-self.start_time) >= self.low_time:
+                self.high_temp_mode = 1
+                self.low_temp_mode = 0
+                self.start_time = time.time()
+                self.cycle_number = self.cycle_number + 1
+
+
     def control_shutdown(self):
         if self.power_flag == 1:
             self.power_flag = 0
+            self.cycle_number = 0
             self.voltage_lock = 0
             self.psu_.set_power_off()
         elif self.power_flag == 0:

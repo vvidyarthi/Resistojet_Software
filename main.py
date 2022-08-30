@@ -26,8 +26,8 @@ class Worker(QObject):
 
         
             elif state_.control_state == 2:
-                print("No Lifetime State Currently Implemented")
-            
+                controller_.control_lifetime(state_.cycle_number, state_.voltage, state_.high_temp, state_.low_temp, state_.high_time, state_.low_time, collector_.tc1_array)
+                widget_.logger.log_data(collector_.data_array)
             print(f'tc1: {collector_.tc1:<10.3f}  tc2: {collector_.tc2:<10.3f}  tc3: {collector_.tc3:<10.3f}   tc4: {collector_.tc4:<10.3f}')
             plotter_.plot_data(collector_.time_array, collector_.tc1_array, collector_.tc2_array, collector_.flow_array, collector_.voltage_array, collector_.power_array)
 
