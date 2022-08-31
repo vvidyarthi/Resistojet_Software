@@ -8,6 +8,12 @@ class StateContainer:
         self.control_state = 0
         self.target_temp = 0
         self.voltage = 0
+        self.cycle_number = 0
+        self.voltage = 0
+        self.low_temp = 0
+        self.low_time = 0
+        self.high_temp = 0
+        self.high_time = 0
         print("Initialized State Containers")
 
     def control_normal(self, temperature_input, fire_temperature_input, voltage_input):
@@ -25,7 +31,6 @@ class StateContainer:
         self.low_time = low_time_input
         self.high_temp = high_temp_input
         self.high_time = high_time_input
-
         print("Lifetime Started")
 
     def control_stop(self):
