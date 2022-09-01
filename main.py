@@ -77,7 +77,7 @@ if __name__ == "__main__":
     state_ = containers.StateContainer()
     collector_ = containers.DataContainer()
     collector_.setup()
-    controller_ = containers.ControlContainer()#collector_.psu)
+    controller_ = containers.ControlContainer(collector_.psu)
     widget_ = qtconfig.Widget(state_, controller_)
     
     plotter_ = containers.Plotter(widget_)
