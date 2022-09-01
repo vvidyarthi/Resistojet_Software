@@ -16,6 +16,7 @@ class Worker(QObject):
     
     def run(self):
         while True:
+            time.sleep(0.1)
 
             if state_.control_state == 0:
                 pass
@@ -59,10 +60,7 @@ class MainWindow(QMainWindow):
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)
         self.thread.start()
-        # self.update_timer = QTimer()
-        # self.update_timer.setInterval(500)
-        # self.update_timer.timeout.connect(self.worker.run)
-        # self.update_timer.start()
+
     def data_task(self):
         self.data_thread = QThread()
         self.data_worker = DataWorker()
