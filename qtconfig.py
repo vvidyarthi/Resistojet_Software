@@ -208,6 +208,9 @@ class Widget(QWidget):
             cycle_target_temp = float(self.cycle_target_temp.text())
             cycle_ambient_temp = float(self.ambient_temp.text())
             num_cycles = int(self.cycles.text())
+            self.logger = data_logger.DataLogger(filename, column_names)
+            self.state_.control_lifetime(num_cycles,cycle_voltage, cycle_ambient_temp, cycle_off_time, cycle_target_temp, cycle_on_time)
+            
 
     @Slot()
     def qtend(self):
