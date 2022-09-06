@@ -233,8 +233,11 @@ class ControlContainer:
 
         if self.cycle_number < self.num_cycles:
         # Preheating to target temperature
+            print("Entered Primary Loop")
+
             if self.high_temp_mode == 0 and self.low_temp_mode == 0:
                 if self.tc1_array[-1] < self.high_temp and self.power_flag == 0:
+                    print("Setting Power to On")
                     self.psu_.set_power_on()
                     self.power_flag = 1
                 elif self.tc1_array[-1] > self.high_temp and self.power_flag == 1:
