@@ -219,6 +219,12 @@ class Widget(QWidget):
         self.preheat_time.setReadOnly(False)
         self.target_temp.setReadOnly(False)
         self.fire_temp.setReadOnly(False)
+        self.cycles.setReadOnly(False)
+        self.cycle_voltage.setReadOnly(False)
+        self.cycle_on_time.setReadOnly(False)
+        self.cycle_off_time.setReadOnly(False)
+        self.cycle_target_temp.setReadOnly(False)
+        self.ambient_temp.setReadOnly(False)
         self.state_.control_stop()
         self.controller_.control_shutdown()
         try:
