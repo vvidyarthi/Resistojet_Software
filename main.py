@@ -11,11 +11,14 @@ from PySide6.QtCore import QObject, QThread
 class Worker(QObject):
 
     def __init__(self):
-        self.init_time = time.time()
+
         QObject.__init__(self)
+        self.init_time = time.time()
     
     def run(self):
+
         while True:
+        
             time.sleep(0.1)
 
             collector_.collect_data(self.init_time)
@@ -47,8 +50,9 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(widget)
 
     def worker_task(self):
-        self.thread = QThread()
+        
         self.worker = Worker()
+        self.thread = QThread(parent=self)
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)
         self.thread.start()
