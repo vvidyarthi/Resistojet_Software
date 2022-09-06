@@ -148,6 +148,8 @@ class Widget(QWidget):
         self.box.stateChanged.connect(lambda state:
                                       self.target_temp.setEnabled(self.box.checkState() == Qt.Unchecked))
         self.box.stateChanged.connect(lambda state:
+                                      self.fire_temp.setEnabled(self.box.checkState() == Qt.Unchecked))
+        self.box.stateChanged.connect(lambda state:
                                       self.cycles.setEnabled(self.box.checkState() != Qt.Unchecked))
         self.box.stateChanged.connect(lambda state:
                                       self.cycle_voltage.setEnabled(self.box.checkState() != Qt.Unchecked))

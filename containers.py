@@ -192,6 +192,7 @@ class ControlContainer:
         self.low_temp_mode = 0
         self.cycle_number = 0
         self.num_cycles = 0
+        self.lifetime_voltage = 0
         self.high_temp = 0
         self.high_time = 0
         self.low_temp = 0
@@ -221,14 +222,14 @@ class ControlContainer:
     def control_lifetime(self, num_cycles_input, voltage_input, high_temp_input, low_temp_input, high_time_input, low_time_input, tc_array_input):
         self.tc1_array = tc_array_input
         self.num_cycles = num_cycles_input
-        self.voltage = voltage_input
+        self.lifetime_voltage = voltage_input
         self.high_temp = high_temp_input
         self.low_temp = low_temp_input
         self.high_time = high_time_input
         self.low_time = low_time_input
 
         if self.voltage_lock == 0:
-            self.psu_.set_voltage(self.voltage)
+            self.psu_.set_voltage(self.lifetime_voltage)
             self.voltage_lock = 1
 
         if self.cycle_number < self.num_cycles:
@@ -274,6 +275,8 @@ class ControlContainer:
     def control_shutdown(self):
         if self.power_flag == 1:
             self.power_flag = 0
+            self.low_temp_mode = 0
+            self.high_temp_mode = 0
             self.cycle_number = 0
             self.voltage_lock = 0
             self.psu_.set_power_off()
