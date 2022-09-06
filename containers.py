@@ -24,7 +24,7 @@ class StateContainer:
         print("Normal Control")
     
     def control_lifetime(self, cycle_num_inp, voltage_input, low_temp_input, low_time_input, high_temp_input, high_time_input):
-        self.control_state = 3
+        self.control_state = 2
         self.cycle_number = cycle_num_inp
         self.voltage = voltage_input
         self.low_temp = low_temp_input
