@@ -3,6 +3,9 @@ import time
 
 
 class StateContainer:
+    '''
+    The StateContainer signals the state that the test is in and passes values to the control container
+    '''
     def __init__(self):
         # Control State 0 is at idle, 1 is normal firing, and 2 is lifetime tesing
         self.control_state = 0
@@ -38,6 +41,9 @@ class StateContainer:
 
 
 class DataContainer:
+    '''
+    The DataContainer holds the arrays of TC, Alicat, and PSU data
+    '''
     def __init__(self):
         self.psu = None
         self.cat = None
@@ -63,6 +69,9 @@ class DataContainer:
         self.power_array = []
 
     def setup(self):
+        '''
+        Connects to the Alicat, PSU, and TCs
+        '''
         try:
             # Alicat
             self.cat = flocat.Flocat(port="/dev/ttyUSB2", event_log_name="/dev/null", baudrate=115200,
@@ -75,6 +84,9 @@ class DataContainer:
             print("Was unable to connect to one or more of the devices")
 
     def collect_data(self, start_time):
+        '''
+        Reads data from Alicat, PSU, and TCs and adds to respective arrays
+        '''
         current_time = time.time()-start_time
         try:
             current_read = self.psu.get_current()
@@ -137,6 +149,9 @@ class DataContainer:
 
 
 class Plotter:
+    '''
+    Plots the data arrays on the Matplotlib canvases
+    '''
     def __init__(self, widget):
         self.widget_ = widget
         self.time_array_ = None
@@ -176,6 +191,9 @@ class Plotter:
 
 
 class ControlContainer:
+    '''
+    Contains the logic to control the PSU for normal tests and lifetime tests
+    '''
     def __init__(self, psu):
         # Normal Variables Init
 
@@ -205,6 +223,8 @@ class ControlContainer:
         if self.voltage_lock == 0:
             self.psu_.set_voltage(self.voltage)
             self.voltage_lock = 1
+        
+        # Preheating to the target temperature
 
         elif self.tc1_array[-1] < target_temperature and self.flow_array[-1] < 0.5 and self.power_flag == 0:
             self.psu_.set_power_on()
@@ -212,6 +232,9 @@ class ControlContainer:
         elif self.tc1_array[-1] > target_temperature and self.flow_array[-1] < 0.5 and self.power_flag == 1:
             self.psu_.set_power_off()
             self.power_flag = 0
+
+        # Turning on PSU to the firing temperature
+
         elif self.flow_array[-1] > 0.5 and self.tc1_array[-1] < fire_temperature and self.power_flag == 0:
             self.psu_.set_power_on()
             self.power_flag = 1
@@ -234,17 +257,17 @@ class ControlContainer:
 
         if self.cycle_number < self.num_cycles:
         # Preheating to target temperature
-            print("Entered Primary Loop")
 
             if self.high_temp_mode == 0 and self.low_temp_mode == 0:
                 if self.tc1_array[-1] < self.high_temp and self.power_flag == 0:
-                    print("Setting Power to On")
                     self.psu_.set_power_on()
                     self.power_flag = 1
                 elif self.tc1_array[-1] > self.high_temp and self.power_flag == 1:
                     self.psu_.set_power_off()
                     self.power_flag = 0
                     self.high_temp_mode = 1
+            
+            # Starting the target temperature portion of the cycle
 
             if self.high_temp_mode == 1 and self.low_temp_mode == 0 and (time.time()-self.start_time) < self.high_time:
                 if self.tc1_array[-1] < self.high_temp and self.power_flag == 0:
@@ -253,11 +276,16 @@ class ControlContainer:
                 elif self.tc1_array[-1] > self.high_temp and self.power_flag == 1:
                     self.psu_.set_power_off()
                     self.power_flag = 0
+            
+            # Ending the target temperature portion of the cycle and  settling down to the low temperature
+
             elif self.high_temp_mode == 1 and self.low_temp_mode == 0 and (time.time()-self.start_time) >= self.high_time:
                 self.high_temp_mode = 0
                 self.low_temp_mode = 1
                 self.start_time = time.time()
             
+            # Starting the lower temperature portion of the cycle
+
             if self.high_temp_mode == 0 and self.low_temp_mode == 1 and (time.time()-self.start_time) < self.low_time:
                 if self.tc1_array[-1] < self.low_temp and self.power_flag == 0:
                     self.psu_.set_power_on()
@@ -265,6 +293,9 @@ class ControlContainer:
                 elif self.tc1_array[-1] > self.low_temp and self.power_flag == 1:
                     self.psu_.set_power_off()
                     self.power_flag = 0
+                
+            # Cycling back to the target temperature portion of the cycle
+
             elif self.high_temp_mode == 0 and self.low_temp_mode == 1 and (time.time()-self.start_time) >= self.low_time:
                 self.high_temp_mode = 1
                 self.low_temp_mode = 0
