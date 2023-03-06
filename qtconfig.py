@@ -1,7 +1,6 @@
-'''
+"""
 Handles all of the Qt modules and graph displays
-'''
-import imp
+"""
 from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import (
     QVBoxLayout,
@@ -24,7 +23,7 @@ matplotlib.use('Qt5Agg')
 
 
 class MplCanvas(FigureCanvas):
-    def __init__(self, parent=None, width=8, height=7, dpi=100):
+    def __init__(self, width=8, height=7, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot()
         super(MplCanvas, self).__init__(fig)
@@ -103,9 +102,9 @@ class Widget(QWidget):
 
         # Matplots
 
-        self.thermal_canvas = MplCanvas(self, width=8, height=7, dpi=90)
-        self.flow_canvas = MplCanvas(self, width=8, height=7, dpi=90)
-        self.electric_canvas = MplCanvas(self, width=8, height=7, dpi=90)
+        self.thermal_canvas = MplCanvas(width=8, height=7, dpi=90)
+        self.flow_canvas = MplCanvas(width=8, height=7, dpi=90)
+        self.electric_canvas = MplCanvas(width=8, height=7, dpi=90)
 
         self.tableside = QVBoxLayout()
         self.tableside.addWidget(QLabel("Thermocouples"))
@@ -139,6 +138,7 @@ class Widget(QWidget):
         self.cycle_on_time.setEnabled(self.box.checkState() != Qt.Unchecked)
         self.cycle_off_time.setEnabled(self.box.checkState() != Qt.Unchecked)
         self.cycle_target_temp.setEnabled(self.box.checkState() != Qt.Unchecked)
+        self.fire_temp.setEnabled(self.box.checkState() != Qt.Unchecked)
         self.ambient_temp.setEnabled(self.box.checkState() != Qt.Unchecked)
 
         self.box.stateChanged.connect(lambda state:
